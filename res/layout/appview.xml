@@ -1,22 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" 
-         android:layout_width="wrap_content"
-         android:layout_height="wrap_content" 
-         android:background="@drawable/background_semi" >
+    android:id="@+id/ll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
     <TextView android:id="@+id/tVName"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:text="@string/app_name" />
-    <ImageView android:id="@+id/iVScreenshot"
-               android:layout_width="wrap_content"
-               android:layout_height="wrap_content"
-               android:src="@drawable/icon"
-               android:layout_below="@+id/tVName"
-               android:layout_alignLeft="@+id/tVName" />
+            android:layout_width="@dimen/recents_app_label_width"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/recents_app_label_text_size"
+            android:layout_alignParentLeft="true"
+            android:layout_alignTop="@+id/iVIcon"
+            android:paddingTop="2dp"
+            android:layout_marginLeft="@dimen/recents_app_label_left_margin"
+            android:singleLine="true"
+            android:ellipsize="marquee"
+            android:textColor="@color/recents_app_label_color"
+        />
+
+    <FrameLayout android:id="@+id/app_thumbnail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/tVName"
+        android:background="@drawable/recents_app_thumbnail_background"
+        android:layout_marginLeft="@dimen/recents_thumbnail_left_margin" >
+        <ImageView android:id="@+id/iVScreenshot"
+            android:layout_width="@dimen/recents_thumbnail_width"
+            android:layout_height="@dimen/recents_thumbnail_height"
+        />
+    </FrameLayout>
+
+        <View android:id="@+id/recents_callout_line"
+            android:layout_width="@dimen/recents_app_label_width"
+            android:layout_height="1dip"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/recents_app_label_left_margin"
+            android:layout_toLeftOf="@+id/app_thumbnail"
+            android:layout_below="@id/tVName"
+            android:layout_marginRight="3dip"
+            android:layout_marginTop="3dip"
+            android:background="@drawable/recents_callout_line"
+        />
+
     <ImageView android:id="@+id/iVIcon"
-               android:layout_width="wrap_content"
-               android:layout_height="wrap_content"
-               android:src="@drawable/icon"
-               android:layout_alignRight="@+id/iVScreenshot"
-               android:layout_alignBottom="@+id/iVScreenshot" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/tVName"
+            android:layout_marginLeft="@dimen/recents_app_icon_left_margin"
+            android:layout_marginTop="@dimen/recents_app_icon_top_margin"
+            android:maxWidth="@dimen/recents_app_icon_max_width"
+            android:maxHeight="@dimen/recents_app_icon_max_height"
+            android:scaleType="centerInside"
+        />
+
 </RelativeLayout>
