@@ -123,7 +123,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
         String filelocation = "data/data/"+ pkgName +"/files";
         File file = new File(filelocation , myfilename);
         if (file.exists()) {
-            file.delete();
+            new CMDProcessor().su.runWaitFor("rm "+file);
         }
     }
 
