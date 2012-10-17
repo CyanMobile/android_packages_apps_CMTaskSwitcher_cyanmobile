@@ -118,8 +118,6 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
     }
 
     public void killApp(String pkgName) {
-	ActivityManager actvityManager = (ActivityManager)this.getSystemService(Context.ACTIVITY_SERVICE);
- 	actvityManager.restartPackage(pkgName);
         String filelocation = "data/data/"+ pkgName +"/files";
         File file = new File(filelocation , myfilename);
         if (file.exists()) {
