@@ -224,6 +224,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
 	getAppsList();
 	adapter.notifyDataSetChanged();
         checkNoAppsRunning();
+        finish();
     }
 }
 
