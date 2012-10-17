@@ -107,7 +107,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
             	killApp(pkgName);
          		getAppsList();
          		adapter.notifyDataSetChanged();
-         		Toast.makeText(getApplicationContext(), "App killed!", Toast.LENGTH_SHORT).show();
+         		Toast.makeText(getApplicationContext(), "Task removed!", Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.cmenu_app_info:
             	getAppInfo(pkgName);
