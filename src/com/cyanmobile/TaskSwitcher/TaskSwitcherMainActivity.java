@@ -130,6 +130,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
 	intent.addCategory(Intent.CATEGORY_DEFAULT);
 	intent.setData(Uri.parse("package:"+pkgName));
 	startActivity(intent);
+        finish();
     }
 
     public void getAppsList() {
