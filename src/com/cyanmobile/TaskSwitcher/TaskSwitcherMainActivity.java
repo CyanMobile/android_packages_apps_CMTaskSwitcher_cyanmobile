@@ -16,6 +16,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.graphics.Canvas;
 import android.net.Uri;
+import android.os.AsyncTask;
 import static android.util.Log.d;
 import java.util.List;
 import java.io.File;
@@ -50,6 +51,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
         TextView mTitle;
         TextView noApps;
         ImageView mIcons;
+        ImageView mKillButton;
 	ImageView myImageViews;
         ListView appsLV;
 	List<App> appsList = new ArrayList<App>();
@@ -63,6 +65,8 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
         setContentView(R.layout.main);
         appsLV = (ListView)findViewById(R.id.apps_list_view);
         noApps = (TextView) findViewById(R.id.no_bg_app_bt);
+        mKillButton = (ImageView) findViewById(R.id.kill_button);
+	mKillButton.setOnClickListener(mKillListener);
 	appsLV.setOnItemClickListener(this);
 	registerForContextMenu(appsLV);
         pm = this.getPackageManager();
@@ -105,9 +109,9 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
         switch (item.getItemId()) {
             case R.id.cmenu_end_app:
             	killApp(pkgName);
-         		getAppsList();
-         		adapter.notifyDataSetChanged();
-         		Toast.makeText(getApplicationContext(), "Task removed!", Toast.LENGTH_SHORT).show();
+         	getAppsList();
+         	adapter.notifyDataSetChanged();
+         	Toast.makeText(getApplicationContext(), "Task removed!", Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.cmenu_app_info:
             	getAppInfo(pkgName);
@@ -117,12 +121,19 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
         }
     }
 
+    private View.OnClickListener mKillListener = new View.OnClickListener() {
+        public void onClick(View v) {
+            new EndAllTask().execute(appsList);
+        }
+    };
+
     public void killApp(String pkgName) {
         String filelocation = "data/data/"+ pkgName +"/files";
         File file = new File(filelocation , myfilename);
         if (file.exists()) {
             new CMDProcessor().su.runWaitFor("rm "+file);
         }
+        am.restartPackage(pkgName);
     }
 
     public void getAppInfo(String pkgName) {
@@ -204,6 +215,24 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
 	   noApps.setVisibility(View.VISIBLE);
 	   appsLV.setVisibility(View.GONE);
 	}
+    }
+
+    private class EndAllTask extends AsyncTask<List<App>, Integer, Long> {
+         protected Long doInBackground(List<App>... names) {
+	     for(App a : names[0]) {
+	    	 killApp(a.pkgName);
+	     }
+	     return null;
+	 }
+
+	 protected void onProgressUpdate(Integer... progress) {}
+
+	 protected void onPostExecute(Long result) {
+	     getAppsList();
+	     Toast.makeText(getApplicationContext(), "All apps remove!", Toast.LENGTH_SHORT).show();
+	     adapter.notifyDataSetChanged();
+	     checkNoAppsRunning();
+	 }
     }
 
     @Override
