@@ -110,8 +110,9 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
             case R.id.cmenu_end_app:
             	killApp(pkgName);
          	getAppsList();
-         	adapter.notifyDataSetChanged();
          	Toast.makeText(getApplicationContext(), "Task removed!", Toast.LENGTH_SHORT).show();
+         	adapter.notifyDataSetChanged();
+                checkNoAppsRunning();
                 return true;
             case R.id.cmenu_app_info:
             	getAppInfo(pkgName);
@@ -211,9 +212,11 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
     	if(appsList.size() > 0) {
 	   appsLV.setVisibility(View.VISIBLE);
 	   noApps.setVisibility(View.GONE);
+           mKillButton.setVisibility(View.VISIBLE);
 	} else {
 	   noApps.setVisibility(View.VISIBLE);
 	   appsLV.setVisibility(View.GONE);
+           mKillButton.setVisibility(View.GONE);
 	}
     }
 
