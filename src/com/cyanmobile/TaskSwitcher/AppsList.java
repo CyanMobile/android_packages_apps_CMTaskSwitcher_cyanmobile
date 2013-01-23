@@ -27,14 +27,16 @@ public class AppsList {
         public Intent intent;
 	public Drawable icon;
 	public Bitmap bitmap;
+        public int ids;
 
 	public AppsList() {
 		
 	}
 	
-	public AppsList(String name, String pkgName, Intent intent, Drawable icon, Bitmap bitmap) {
+	public AppsList(String name, String pkgName, int ids, Intent intent, Drawable icon, Bitmap bitmap) {
 		this.name = name;
 		this.pkgName = pkgName;
+                this.ids = ids;
                 this.intent = intent;
 		this.icon = icon;
 		this.bitmap = bitmap;

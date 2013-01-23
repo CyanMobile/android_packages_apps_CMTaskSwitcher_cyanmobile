@@ -27,14 +27,16 @@ public class App {
         public Intent intent;
 	public Drawable icon;
 	public Bitmap bitmap;
+        public int ids;
 
 	public App() {
 		
 	}
 	
-	public App(String name, String pkgName, Intent intent, Drawable icon, Bitmap bitmap) {
+	public App(String name, String pkgName, int ids, Intent intent, Drawable icon, Bitmap bitmap) {
 		this.name = name;
 		this.pkgName = pkgName;
+                this.ids = ids;
                 this.intent = intent;
 		this.icon = icon;
 		this.bitmap = bitmap;

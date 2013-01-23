@@ -105,10 +105,11 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
         App app =  (App) appsLV.getItemAtPosition(info.position);
         String pkgName = app.pkgName;
-        
+        int ids = app.ids;
+
         switch (item.getItemId()) {
             case R.id.cmenu_end_app:
-            	killApp(pkgName);
+            	killApp(pkgName, ids);
          	getAppsList();
          	Toast.makeText(getApplicationContext(), "Task removed!", Toast.LENGTH_SHORT).show();
          	adapter.notifyDataSetChanged();
@@ -128,13 +129,13 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
         }
     };
 
-    public void killApp(String pkgName) {
+    public void killApp(String pkgName, int ids) {
         String filelocation = "data/data/"+ pkgName +"/files";
         File file = new File(filelocation , myfilename);
         if (file.exists()) {
             new CMDProcessor().su.runWaitFor("rm "+file);
         }
-        am.restartPackage(pkgName);
+        am.removeTask(ids, ActivityManager.REMOVE_TASK_KILL_PROCESS);
     }
 
     public void getAppInfo(String pkgName) {
@@ -184,6 +185,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
                 final String title = activityInfo.loadLabel(pm).toString();
                 Drawable icon = activityInfo.loadIcon(pm);
                 final String myPackageName = activityInfo.packageName;
+                final int ids = info.id;
 
                 if (title != null && title.length() > 0 && myPackageName != null && icon != null) {
                 	
@@ -200,7 +202,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
                 	}
                 	if (b != null){
                 		d(LOG_TAG, "	Bitmap found: "+ b);
-                                App app  = new App(title, myPackageName, intent, icon, b);
+                                App app  = new App(title, myPackageName, ids, intent, icon, b);
   		  		appsList.add(app);
                        }
                 }
@@ -223,7 +225,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
     private class EndAllTask extends AsyncTask<List<App>, Integer, Long> {
          protected Long doInBackground(List<App>... names) {
 	     for(App a : names[0]) {
-	    	 killApp(a.pkgName);
+	    	 killApp(a.pkgName, a.ids);
 	     }
 	     return null;
 	 }
@@ -247,7 +249,8 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Intent intent = (Intent)view.getTag();
         if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY);
+            intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
+                            | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
             try {
                 this.startActivity(intent);
             } catch (ActivityNotFoundException e) {
