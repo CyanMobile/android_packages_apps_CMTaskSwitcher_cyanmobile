@@ -185,7 +185,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
                 final String title = activityInfo.loadLabel(pm).toString();
                 Drawable icon = activityInfo.loadIcon(pm);
                 final String myPackageName = activityInfo.packageName;
-                final int ids = info.id;
+                final int ids = info.persistentId;
 
                 if (title != null && title.length() > 0 && myPackageName != null && icon != null) {
                 	
@@ -201,7 +201,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
                 		continue;
                 	}
                 	if (b != null){
-                		d(LOG_TAG, "	Bitmap found: "+ b);
+                		d(LOG_TAG, "	Bitmap found: "+ b + "id: "+ids);
                                 App app  = new App(title, myPackageName, ids, intent, icon, b);
   		  		appsList.add(app);
                        }
