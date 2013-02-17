@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,7 +18,8 @@ import android.graphics.drawable.Drawable;
 import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.AsyncTask;
-import static android.util.Log.d;
+import android.os.Handler;
+import android.os.RemoteException;
 import java.util.List;
 import java.io.File;
 import java.util.ArrayList;
@@ -44,48 +46,46 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 public class TaskSwitcherMainActivity extends Activity implements OnItemClickListener {
-	private static String LOG_TAG = "ATaskSwitcherMainActivity";
-	private ActivityManager am;
-	private PackageManager pm;
-	private static String myfilename = "applicationThumbnail.png";
-        TextView mTitle;
-        TextView noApps;
-        ImageView mIcons;
-        ImageView mKillButton;
-	ImageView myImageViews;
-        ListView appsLV;
-	List<App> appsList = new ArrayList<App>();
-	AppsArrayAdapter adapter;
-	private static int NUM_BUTTONS = 8;
-        private static int MAX_RECENT_TASKS = NUM_BUTTONS * 2;
+    private ActivityManager am;
+    private PackageManager pm;
+    private static String myfilename = "applicationThumbnail.png";
+    private TextView mTitle;
+    private TextView noApps;
+    private ImageView mIcons;
+    private ImageView mKillButton;
+    private ImageView myImageViews;
+    ListView appsLV;
+    List<App> appsList = new ArrayList<App>();
+    AppsArrayAdapter adapter;
+    private static int NUM_BUTTONS = 8;
+    private static int MAX_RECENT_TASKS = NUM_BUTTONS * 2;
+    private boolean mHidden = false;
+    private boolean mHiding = false;
+    private Handler mHandler;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        getWindow().getDecorView().setBackgroundColor(0x80000000);
         setContentView(R.layout.main);
-        appsLV = (ListView)findViewById(R.id.apps_list_view);
-        noApps = (TextView) findViewById(R.id.no_bg_app_bt);
-        mKillButton = (ImageView) findViewById(R.id.kill_button);
-	mKillButton.setOnClickListener(mKillListener);
-	appsLV.setOnItemClickListener(this);
-	registerForContextMenu(appsLV);
-        pm = this.getPackageManager();
-        am = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
 
-        getAppsList();
-        checkNoAppsRunning();
+        if (appsLV == null) {
+            appsLV = (ListView)findViewById(R.id.apps_list_view);
+            noApps = (TextView) findViewById(R.id.no_bg_app_bt);
+            mKillButton = (ImageView) findViewById(R.id.kill_button);
+	    mKillButton.setOnClickListener(mKillListener);
+	    appsLV.setOnItemClickListener(this);
+	    registerForContextMenu(appsLV);
+            pm = this.getPackageManager();
+            am = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
+            mHandler = new Handler();
 
-	adapter = new AppsArrayAdapter(getApplicationContext(), R.layout.appview, appsList);	
-	appsLV.setAdapter(adapter);
+            refresh();
 
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
- 	getAppsList();
- 	adapter.notifyDataSetChanged();
-        checkNoAppsRunning();
+	    adapter = new AppsArrayAdapter(getApplicationContext(), R.layout.appview, appsList);	
+	    appsLV.setAdapter(adapter);
+        }
     }
 
     @Override
@@ -110,10 +110,8 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
         switch (item.getItemId()) {
             case R.id.cmenu_end_app:
             	killApp(pkgName, ids);
-         	getAppsList();
          	Toast.makeText(getApplicationContext(), "Task removed!", Toast.LENGTH_SHORT).show();
-         	adapter.notifyDataSetChanged();
-                checkNoAppsRunning();
+         	refresh();
                 return true;
             case R.id.cmenu_app_info:
             	getAppInfo(pkgName);
@@ -130,11 +128,6 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
     };
 
     public void killApp(String pkgName, int ids) {
-        String filelocation = "data/data/"+ pkgName +"/files";
-        File file = new File(filelocation , myfilename);
-        if (file.exists()) {
-            //new CMDProcessor().su.runWaitFor("rm "+file);
-        }
         am.removeTask(ids, ActivityManager.REMOVE_TASK_KILL_PROCESS);
     }
 
@@ -146,20 +139,16 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
         finish();
     }
 
-    public void getAppsList() {
+    private void updateRecentTasks() {
     	
-    	appsList.clear();
-
-    	Intent homeIntent = new Intent(Intent.ACTION_MAIN);
-    	homeIntent.addCategory(Intent.CATEGORY_HOME);
-    	ActivityInfo homeInfo = homeIntent.resolveActivityInfo(pm, 0);
+   	ActivityInfo homeInfo = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).resolveActivityInfo(pm, 0);
 
         List<ActivityManager.RecentTaskInfo> recentTasks =
                         am.getRecentTasks(MAX_RECENT_TASKS, ActivityManager.RECENT_IGNORE_UNAVAILABLE);
 
-        int index = 0;
         int numTasks = recentTasks.size();
-        for (int i = 0; i < numTasks && (index < NUM_BUTTONS); ++i) {
+    	appsList.clear();
+        for (int i = 0, index = 0; i < numTasks && (index < NUM_BUTTONS); ++i) {
             final ActivityManager.RecentTaskInfo info = recentTasks.get(i);
 
             Intent intent = new Intent(info.baseIntent);
@@ -168,13 +157,10 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
             }
 
             // Skip the current home activity.
-            if (homeInfo != null) {
-                if (homeInfo.packageName.equals(
-                        intent.getComponent().getPackageName())
-                        && homeInfo.name.equals(
-                                intent.getComponent().getClassName())) {
-                    continue;
-                }
+            if (homeInfo != null
+                && homeInfo.packageName.equals(intent.getComponent().getPackageName())
+                && homeInfo.name.equals(intent.getComponent().getClassName())) {
+                continue;
             }
 
             intent.setFlags((intent.getFlags()&~Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
@@ -185,33 +171,37 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
                 final String title = activityInfo.loadLabel(pm).toString();
                 Drawable icon = activityInfo.loadIcon(pm);
                 final String myPackageName = activityInfo.packageName;
-                final int ids = info.persistentId;
+                int ids = info.persistentId;
 
-                if (title != null && title.length() > 0 && myPackageName != null && icon != null) {
-                	
-                	String filelocation = "data/data/"+ myPackageName +"/files";
-                	
-                	File file = new File(filelocation , myfilename);
-                	Bitmap b = null;
-                	if (file.exists()) {
-                		d(LOG_TAG, "file exists");
-                		b = BitmapFactory.decodeFile(filelocation +"/"+ myfilename);
-                	} else {
-                		d(LOG_TAG, "file doesn't exist: "+ filelocation);
-                		continue;
-                	}
-                	if (b != null){
-                		d(LOG_TAG, "	Bitmap found: "+ b + "id: "+ids);
-                                App app  = new App(title, myPackageName, ids, intent, icon, b);
-  		  		appsList.add(app);
-                       }
+                if (ids != -1 && title != null && title.length() > 0 && myPackageName != null && icon != null) {
+                    String filelocation = "data/data/"+ myPackageName +"/files";
+                    File file = new File(filelocation , myfilename);
+                    Bitmap bmp = null;
+                    if (file.exists()) {
+                        bmp = BitmapFactory.decodeFile(filelocation +"/"+ myfilename);
+                    } else {
+                        continue;
+                    }
+                    if (bmp != null){
+                        App app  = new App(title, myPackageName, ids, intent, icon, bmp);
+                        appsList.add(app);
+                    }
+                    ++index;
                 }
             }
         }
     }
 
-    public void checkNoAppsRunning() {
-    	if(appsList.size() > 0) {
+    private final Runnable mRefreshRunnable = new Runnable() {
+        public void run() {
+ 	    updateRecentTasks();
+ 	    adapter.notifyDataSetChanged();
+            showRecents(appsList.size() > 0);
+        }
+    };
+ 
+    private void showRecents(boolean show) {
+    	if(show) {
 	   appsLV.setVisibility(View.VISIBLE);
 	   noApps.setVisibility(View.GONE);
            mKillButton.setVisibility(View.VISIBLE);
@@ -233,16 +223,50 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
 	 protected void onProgressUpdate(Integer... progress) {}
 
 	 protected void onPostExecute(Long result) {
-	     getAppsList();
 	     Toast.makeText(getApplicationContext(), "All apps remove!", Toast.LENGTH_SHORT).show();
-	     adapter.notifyDataSetChanged();
-	     checkNoAppsRunning();
+	     refresh();
 	 }
     }
 
     @Override
     public boolean onCreateThumbnail(Bitmap bitmap,Canvas canvas){
     	return false;
+    }
+
+    @Override
+    public void finish() {
+        moveTaskToBack(true);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        mHidden = !mHidden;
+        if (mHidden) {
+            mHiding = true;
+            moveTaskToBack(true);
+        } else {
+            mHiding = false;
+        }
+        super.onNewIntent(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refresh();
+    }
+
+    private void refresh() {
+        if (!mHiding && appsLV != null) {
+            mHandler.removeCallbacks(mRefreshRunnable);
+            mHandler.postDelayed(mRefreshRunnable, 50);
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        refresh();
     }
 
     @Override
@@ -257,9 +281,6 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
                 Log.w("Recent", "Unable to launch recent task", e);
             }
         }
-	getAppsList();
-	adapter.notifyDataSetChanged();
-        checkNoAppsRunning();
         finish();
     }
 }
