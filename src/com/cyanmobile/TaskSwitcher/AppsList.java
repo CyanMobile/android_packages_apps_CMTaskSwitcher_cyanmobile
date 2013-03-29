@@ -29,9 +29,7 @@ public class AppsList {
 	public Bitmap bitmap;
         public int ids;
 
-	public AppsList() {
-		
-	}
+	public AppsList() {}
 	
 	public AppsList(String name, String pkgName, int ids, Intent intent, Drawable icon, Bitmap bitmap) {
 		this.name = name;

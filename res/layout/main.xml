@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tlv="http://schemas.android.com/apk/res/com.cyanmobile.TaskSwitcher"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     >
 
-    <ListView
-        android:id="@+id/apps_list_view"
+    <com.cyanmobile.TaskSwitcher.TouchListView
+        android:id="@android:id/list"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="0.58"
+        android:drawSelectorOnTop="false"
+        android:fastScrollEnabled="true"
+        tlv:normal_height="128dip"
+        tlv:expanded_height="152dip"
+	tlv:grabber="@+id/app_thumbnail"
+	tlv:remove_mode="slideRight"
         android:visibility="gone" >
         
-    </ListView>
+    </com.cyanmobile.TaskSwitcher.TouchListView>
 
     <TextView
         android:id="@+id/no_bg_app_bt"

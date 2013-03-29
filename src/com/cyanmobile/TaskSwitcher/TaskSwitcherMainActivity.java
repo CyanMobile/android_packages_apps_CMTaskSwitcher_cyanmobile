@@ -1,7 +1,7 @@
 package com.cyanmobile.TaskSwitcher;
 
 import com.cyanmobile.TaskSwitcher.R;
-import android.app.Activity;
+import android.app.ListActivity;
 import android.os.Bundle;
 import android.app.ActivityManager;
 import android.content.ActivityNotFoundException;
@@ -42,10 +42,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.ListView;
 import android.widget.Toast;
 
-public class TaskSwitcherMainActivity extends Activity implements OnItemClickListener {
+public class TaskSwitcherMainActivity extends ListActivity implements OnItemClickListener {
     private ActivityManager am;
     private PackageManager pm;
     private static String myfilename = "applicationThumbnail.png";
@@ -54,13 +53,11 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
     private ImageView mIcons;
     private ImageView mKillButton;
     private ImageView myImageViews;
-    ListView appsLV;
+    TouchListView appsLV;
     List<App> appsList = new ArrayList<App>();
-    AppsArrayAdapter adapter;
+    AppsArrayAdapter adapter = null;
     private static int NUM_BUTTONS = 8;
     private static int MAX_RECENT_TASKS = NUM_BUTTONS * 2;
-    private boolean mHidden = false;
-    private boolean mHiding = false;
     private Handler mHandler;
 
     @Override
@@ -71,7 +68,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
         setContentView(R.layout.main);
 
         if (appsLV == null) {
-            appsLV = (ListView)findViewById(R.id.apps_list_view);
+            appsLV = (TouchListView) getListView();
             noApps = (TextView) findViewById(R.id.no_bg_app_bt);
             mKillButton = (ImageView) findViewById(R.id.kill_button);
 	    mKillButton.setOnClickListener(mKillListener);
@@ -80,11 +77,13 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
             pm = this.getPackageManager();
             am = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
             mHandler = new Handler();
-
             refresh();
 
-	    adapter = new AppsArrayAdapter(getApplicationContext(), R.layout.appview, appsList);	
-	    appsLV.setAdapter(adapter);
+	    adapter = new AppsArrayAdapter(getApplicationContext(), R.layout.appview, appsList);
+	    setListAdapter(adapter);
+
+            appsLV.setDropListener(onDrop);
+	    appsLV.setRemoveListener(onRemove);
         }
     }
 
@@ -92,7 +91,7 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
     public void onCreateContextMenu(ContextMenu menu, View v,
                                     ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
+        AdapterContextMenuInfo info = (AdapterContextMenuInfo)menuInfo;
         App app =  (App) appsLV.getItemAtPosition(info.position);
         menu.setHeaderIcon(app.icon);
         menu.setHeaderTitle(app.name);
@@ -120,6 +119,27 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
                 return super.onContextItemSelected(item);
         }
     }
+
+    private TouchListView.DropListener onDrop = new TouchListView.DropListener() {
+        @Override
+        public void drop(int from, int to) {
+            App app = adapter.getItem(from);
+            adapter.remove(app);
+            adapter.insert(app, to);
+        }
+    };
+
+    private TouchListView.RemoveListener onRemove = new TouchListView.RemoveListener() {
+	@Override
+	public void remove(int which) {
+            App app = adapter.getItem(which);
+            String pkgName = app.pkgName;
+            int ids = app.ids;
+            if (pkgName != null) killApp(pkgName, ids);
+            adapter.remove(app);
+            refresh();
+	}
+    };
 
     private View.OnClickListener mKillListener = new View.OnClickListener() {
         public void onClick(View v) {
@@ -239,25 +259,13 @@ public class TaskSwitcherMainActivity extends Activity implements OnItemClickLis
     }
 
     @Override
-    protected void onNewIntent(Intent intent) {
-        mHidden = !mHidden;
-        if (mHidden) {
-            mHiding = true;
-            moveTaskToBack(true);
-        } else {
-            mHiding = false;
-        }
-        super.onNewIntent(intent);
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
         refresh();
     }
 
-    private void refresh() {
-        if (!mHiding && appsLV != null) {
+    public void refresh() {
+        if (appsLV != null) {
             mHandler.removeCallbacks(mRefreshRunnable);
             mHandler.postDelayed(mRefreshRunnable, 50);
         }

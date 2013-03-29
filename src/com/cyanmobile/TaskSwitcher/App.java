@@ -29,9 +29,7 @@ public class App {
 	public Bitmap bitmap;
         public int ids;
 
-	public App() {
-		
-	}
+	public App() {}
 	
 	public App(String name, String pkgName, int ids, Intent intent, Drawable icon, Bitmap bitmap) {
 		this.name = name;
