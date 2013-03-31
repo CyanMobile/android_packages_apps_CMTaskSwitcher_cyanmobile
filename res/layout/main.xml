@@ -12,10 +12,10 @@
         android:layout_weight="0.58"
         android:drawSelectorOnTop="false"
         android:fastScrollEnabled="true"
-        tlv:normal_height="128dip"
-        tlv:expanded_height="152dip"
-	tlv:grabber="@+id/app_thumbnail"
-	tlv:remove_mode="slideRight"
+        tlv:normal_height="@dimen/recents_thumbnail_height"
+        tlv:expanded_height="@dimen/recents_drag_height"
+	tlv:grabber="@+id/iVIcon"
+	tlv:remove_mode="fling"
         android:visibility="gone" >
         
     </com.cyanmobile.TaskSwitcher.TouchListView>
@@ -23,7 +23,7 @@
     <TextView
         android:id="@+id/no_bg_app_bt"
         android:layout_width="match_parent"
-        android:layout_height="219dp"
+        android:layout_height="@dimen/recents_noapp_height"
         android:layout_weight="0.09"
         android:gravity="center"
         android:text="@string/no_running_apps" />
